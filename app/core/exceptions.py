@@ -18,3 +18,8 @@ def forbidden(message: str = 'Bạn không có quyền truy cập'):
         detail= message
     )
 
+# def internal_server_error(message: str = 'Server gặp lỗi'):
+#     return HTTPException(
+#         status_code= status.HTTP_500_INTERNAL_SERVER_ERROR,
+#         detail= message
+#     )
