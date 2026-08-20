@@ -10,8 +10,14 @@ class Event(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), nullable= False)
     created_at = Column(DateTime, nullable= False)
 
-    ownwe = relationship('User', back_populates= 'owned_events')
-    staff = relationship('EventStaff', back_populates='event')
+# user 1-N event
+    owner = relationship('User', back_populates= 'owned_events', foreign_keys=[owner_id])
+
+# event N-N user qua EventStaff
+    staff_members = relationship('EventStaff', back_populates='event')
+
+# event 1-N EventTask
+    tasks = relationship('EventTask', back_populates= 'event')
 
 
 class EventStaff(Base):
@@ -21,6 +27,5 @@ class EventStaff(Base):
     role = Column(Enum('Owner', 'Member'), nullable= False)
     joined_at = Column(DateTime, nullable= False)
 
-    event = relationship('Event', back_populates= 'staff')
+    event = relationship('Event', back_populates= 'staff_members')
     user = relationship('User', back_populates= 'event_staff')
-    assigned_tasks = relationship('EventTask', back_populates= 'assignee')

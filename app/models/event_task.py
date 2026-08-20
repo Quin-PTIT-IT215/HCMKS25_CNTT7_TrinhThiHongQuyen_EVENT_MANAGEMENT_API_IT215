@@ -16,4 +16,4 @@ class EventTask(Base):
     created_at = Column(DateTime, nullable= False, default= datetime.now(timezone.utc))
 
     event = relationship('Event', back_populates= 'tasks')
-    assignee = relationship('User', back_populates= 'assigned_tasks')
+    assignee = relationship('User', back_populates= 'assigned_tasks', foreign_keys=[assignee_id])

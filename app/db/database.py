@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 DATASE_URL = settings.DATABASE_URL
 engine = create_engine(DATASE_URL)
 
-LocalSession = sessionmaker(
+SessionLocal = sessionmaker(
     autocommit= False,
     autoflush= False,
     bind= engine
@@ -17,7 +17,7 @@ class Base(DeclarativeBase):
 
 def get_db():
     try:
-        db = LocalSession()
+        db = SessionLocal()
         yield db
     finally:
         db.close()

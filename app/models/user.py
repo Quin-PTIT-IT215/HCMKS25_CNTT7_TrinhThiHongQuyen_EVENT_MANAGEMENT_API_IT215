@@ -12,5 +12,12 @@ class User(Base):
     is_active = Column(Boolean, default= True)
     created_at = Column(DateTime, nullable= False)
 
-    owned_events = relationship('Event', back_populates= 'owner')
+# user 1-N event
+    owned_events = relationship('Event', back_populates= 'owner', foreign_keys= "Event.owner_id")
+
+# user N-N event qua EventStaff
     event_staff = relationship('EventStaff', back_populates= 'user')
+
+# user 1-N EventTask
+    assigned_tasks = relationship('EventTask', back_populates= 'assignee', foreign_keys= 'EventTask.assignee_id')
+    
