@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+# from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -8,20 +9,23 @@ from app.core.security import decode_access_token
 import jwt
 
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login"
-)
+# oauth2_scheme = OAuth2PasswordBearer(
+#     tokenUrl="/api/auth/login"
+# )
+security = HTTPBearer()
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token không hợp lệ hoặc đã hết hạn",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
+    # credentials_exception = HTTPException(
+    #     status_code=status.HTTP_401_UNAUTHORIZED,
+    #     detail="Token không hợp lệ hoặc đã hết hạn",
+    #     headers={"WWW-Authenticate": "Bearer"}
+    # )
+
+    token = credentials.credentials
 
     try:
         payload = decode_access_token(token)
@@ -29,7 +33,10 @@ def get_current_user(
         user_id = payload.get("id")
 
         if user_id is None:
-            raise credentials_exception
+            raise HTTPException(
+                status_code= 401,
+                detail= 'Token không hợp lệ'
+            )
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(
@@ -38,13 +45,13 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-    except jwt.InvalidTokenError:
-        raise credentials_exception
+    # except jwt.InvalidTokenError:
+    #     raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
 
-    if user is None:
-        raise credentials_exception
+    # if user is None:
+    #     raise credentials_exception
 
     if not user.is_active:
         raise HTTPException(

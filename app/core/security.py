@@ -4,8 +4,6 @@ from datetime import datetime, timezone, timedelta
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl= '/api/auth/login')
-
 def hash_password(password: str, cost_factor: int = 12):
     password_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt(rounds= cost_factor)
