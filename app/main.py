@@ -4,13 +4,15 @@ from fastapi.responses import JSONResponse
 from app.models.user import User
 from app.models.event import Event, EventStaff
 from app.models.event_task import EventTask
+from app.routers import auth, users
 from app.db.database import Base, engine
 from app.schemas.response import APIResponse
 from datetime import datetime, timezone
 
 
 app = FastAPI()
-
+app.include_router(auth.router)
+app.include_router(users.router)
 Base.metadata.create_all(bind= engine)
 
 # chuẩn hóa response lỗi, trong api nào có raise HTTPException() thì hàm này để xử lý lỗi trước khi trả response cho người dùng
@@ -49,8 +51,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-
-
 @app.get('/health')
 def health_check():
     return APIResponse(
@@ -62,13 +62,3 @@ def health_check():
         error= None
     )
 
-@app.get("/")
-def test():
-    return APIResponse(
-        statusCode=200,
-        data=None,
-        message="Đang kết nối",
-        timestamp=datetime.now(timezone.utc),
-        path="/",
-        error=None
-    )
