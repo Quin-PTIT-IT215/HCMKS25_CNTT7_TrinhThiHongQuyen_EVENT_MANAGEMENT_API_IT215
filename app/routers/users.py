@@ -1,10 +1,7 @@
-from fastapi import APIRouter, Depends, Form, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.schemas.user import UserCreate, UserResponse, UserLogin
-from app.schemas.response import APIResponse
-from app.services.user import create_user, user_login
+from app.schemas.user import UserCreate, UserResponse
 from app.db.database import get_db
-from datetime import datetime, timezone
 from app.core.security import create_access_token
 from app.models.user import User
 from app.dependencies.user import get_current_user, require_admin
