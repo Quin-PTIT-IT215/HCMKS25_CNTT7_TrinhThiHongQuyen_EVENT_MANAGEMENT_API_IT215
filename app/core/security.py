@@ -40,12 +40,22 @@ def create_refresh_token(data: dict):
 
 
 def decode_access_token(token: str):
-    payload = jwt.decode(
-        token,
-        settings.SECRET_KEY,
-        algorithms= [settings.ALGORITHM]
-    )
-    return payload
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms= [settings.ALGORITHM]
+        )
+
+        if payload.get("type") != "access":
+            raise JWTError("Invalid token type")
+        return payload
+    
+    except ExpiredSignatureError:
+        raise ValueError("Access token đã hết hạn")
+
+    except JWTError:
+        raise ValueError("Access token không hợp lệ")
 
 
 def decode_refresh_token(token: str):

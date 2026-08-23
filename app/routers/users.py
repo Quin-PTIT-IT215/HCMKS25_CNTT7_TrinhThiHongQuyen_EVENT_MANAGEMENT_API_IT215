@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserResponse
 from app.db.database import get_db
+from app.schemas.response import APIResponse
 from app.core.security import create_access_token
 from app.models.user import User
+from datetime import datetime, timezone
 from app.dependencies.user import get_current_user, require_admin
 
 router = APIRouter(
@@ -11,9 +13,16 @@ router = APIRouter(
     tags= ['Authentication']
 )
 
-@router.get('/me', response_model= UserResponse)
+@router.get('/me', response_model= APIResponse)
 def get_my_profile(current_user: User = Depends(get_current_user)):
-    return current_user
+    return APIResponse(
+        statusCode=200,
+        data=UserResponse.model_validate(current_user),
+        message="Lấy thông tin người dùng thành công",
+        timestamp=datetime.now(timezone.utc),
+        path="/api/user/me",
+        error=None
+    )
 
 
 @router.get('/admin')

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserLogin
 from app.schemas.response import APIResponse
+from app.schemas.auth import TokenResponse
 from app.services.user import create_user, user_login
 from app.db.database import get_db
 from datetime import datetime, timezone
@@ -30,7 +31,7 @@ def register(
 
     return new_user
 
-@router.post('/login', response_model= APIResponse)
+@router.post('/login', response_model= TokenResponse)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user_data = UserLogin(email= form_data.username, password= form_data.password)
     user = user_login(db, user_data)
@@ -38,25 +39,31 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = create_access_token(data= {'sub': user.email, 'id': user.id, 'role': role_name})
     refresh_token = create_refresh_token(data= {'sub': user.email, 'id': user.id, 'role': user.role})
 
-    return APIResponse(
-        statusCode= 200,
-        data= {
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'token_type': 'bearer',
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'role': user.role,
-                'is_active': user.is_active,
-                'created_at': user.created_at
-            }
-        },
-        message= 'Đăng nhập thành công',
-        timestamp= datetime.now(timezone.utc),
-        path= '/api/auth/login',
-        error= None
-    )
+    # return APIResponse(
+    #     statusCode= 200,
+    #     data= {
+    #         'access_token': access_token,
+    #         'refresh_token': refresh_token,
+    #         'token_type': 'bearer',
+    #         'user': {
+    #             'id': user.id,
+    #             'email': user.email,
+    #             'role': user.role,
+    #             'is_active': user.is_active,
+    #             'created_at': user.created_at
+    #         }
+    #     },
+    #     message= 'Đăng nhập thành công',
+    #     timestamp= datetime.now(timezone.utc),
+    #     path= '/api/auth/login',
+    #     error= None
+    # )
+
+    return TokenResponse(
+    access_token=access_token,
+    refresh_token=refresh_token,
+    token_type="bearer"
+)
 
 @router.post('/refresh')
 def refresh_access_token(data: RefreshTokenRequets):
