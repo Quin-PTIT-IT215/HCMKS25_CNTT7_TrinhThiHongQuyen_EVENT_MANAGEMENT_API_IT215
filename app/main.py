@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.models.user import User
 from app.models.event import Event, EventStaff
 from app.models.event_task import EventTask
-from app.routers import auth, users
+from app.routers import auth, users, event
 from app.db.database import Base, engine
 from app.schemas.response import APIResponse
 from datetime import datetime, timezone
@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 app = FastAPI()
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(event.router)
 Base.metadata.create_all(bind= engine)
 
 # chuẩn hóa response lỗi, trong api nào có raise HTTPException() thì hàm này để xử lý lỗi trước khi trả response cho người dùng

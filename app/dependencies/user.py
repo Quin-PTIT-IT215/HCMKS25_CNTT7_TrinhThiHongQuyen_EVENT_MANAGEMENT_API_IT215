@@ -39,7 +39,7 @@ def get_current_user(
                 detail= 'Token không hợp lệ'
             )
 
-    except jwt.ExpiredSignatureError:
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token đã hết hạn",
@@ -53,6 +53,12 @@ def get_current_user(
 
     # if user is None:
     #     raise credentials_exception
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Người dùng không tồn tại"
+        )
 
     if not user.is_active:
         raise HTTPException(
