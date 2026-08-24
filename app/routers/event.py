@@ -52,7 +52,7 @@ def create_evevt(
     )
 
 
-@router.get('events', response_model= APIResponse)
+@router.get('', response_model= APIResponse)
 def get_events(
     name: str | None = Query(default= None),
     current_user: User = Depends(get_current_user),
@@ -87,15 +87,6 @@ def get_events(
 @router.get('/{event_id}', response_model= APIResponse)
 def get_event(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     event = db.query(Event).filter(Event.id == event_id).first()
-
-    staff = (
-        db.query(EventStaff)
-        .filter(
-            EventStaff.event_id == event_id,
-            EventStaff.user_id == current_user.id
-        )
-        .first()
-    )
 
     if event is None:
         raise HTTPException(
@@ -235,48 +226,60 @@ def add_event_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    
-    event = db.query(Event).filter(Event.id == event_id).first()
+    # Kiểm tra event tồn tại
+    event = (db.query(Event).filter(Event.id == event_id).first())
 
     if event is None:
         raise HTTPException(
             status_code=404,
-            detail="Sự kiện không tồn tại"
+            detail='Sự kiện không tồn tại'
         )
 
+    # Chỉ owner mới được thêm member
     if event.owner_id != current_user.id:
         raise HTTPException(
             status_code=403,
-            detail="Chỉ owner mới được thêm thành viên"
+            detail='Chỉ OWNER mới được thêm thành viên'
         )
 
-    user = db.query(User).filter(
-        User.id == member_data.user_id
-    ).first()
+    # Kiểm tra user tồn tại
+    user = (db.query(User).filter(User.id == member_data.user_id).first())
 
     if user is None:
         raise HTTPException(
             status_code=404,
-            detail="Người dùng không tồn tại"
+            detail='Người dùng không tồn tại'
         )
 
+    # Không cho owner tự thêm chính mình
+    if user.id == event.owner_id:
+        raise HTTPException(
+            status_code=409,
+            detail='OWNER đã là thành viên của sự kiện'
+        )
 
-    existing_member = db.query(EventStaff).filter(
-        EventStaff.event_id == event_id,
-        EventStaff.user_id == member_data.user_id
-    ).first()
+    # Kiểm tra user đã là member chưa
+    existing_member = (
+        db.query(EventStaff)
+        .filter(
+            EventStaff.event_id == event_id,
+            EventStaff.user_id == member_data.user_id
+        )
+        .first()
+    )
 
     if existing_member is not None:
         raise HTTPException(
             status_code=409,
-            detail="Người dùng đã là thành viên của sự kiện"
+            detail='Người dùng đã là thành viên của sự kiện'
         )
 
+    
     new_member = EventStaff(
         event_id=event_id,
         user_id=member_data.user_id,
-        role="Member",
-        joined_at= datetime.now(timezone.utc)
+        role='Member',
+        joined_at=datetime.now(timezone.utc)
     )
 
     db.add(new_member)
@@ -284,10 +287,163 @@ def add_event_member(
     db.refresh(new_member)
 
     return APIResponse(
-    statusCode= status.HTTP_201_CREATED,
-    data= new_member,
-    message= "Thêm thành viên thành công",
-    timestamp= datetime.now(timezone.utc),
-    path= f"/events/{event_id}/members",
-    error= None
+        statusCode=status.HTTP_201_CREATED,
+        data={
+            'event_id': new_member.event_id,
+            'user_id': new_member.user_id,
+            'role': new_member.role,
+            'joined_at': new_member.joined_at
+        },
+        message='Thêm thành viên thành công',
+        timestamp=datetime.now(timezone.utc),
+        path=f'/api/events/{event_id}/members',
+        error=None
+    )
+
+
+@router.delete(
+    '/{event_id}/members/{user_id}',
+    response_model=APIResponse
 )
+def remove_event_member(
+    event_id: int,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Kiểm tra event tồn tại
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail='Sự kiện không tồn tại'
+        )
+
+    # Chỉ owner mới được xóa member
+    if event.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail='Chỉ OWNER mới được xóa thành viên'
+        )
+
+    # Không được xóa chính owner
+    if user_id == event.owner_id:
+        raise HTTPException(
+            status_code=400,
+            detail='Không được xóa OWNER của sự kiện'
+        )
+
+    # Tìm member
+    member = (
+        db.query(EventStaff)
+        .filter(
+            EventStaff.event_id == event_id,
+            EventStaff.user_id == user_id
+        )
+        .first()
+    )
+
+    if member is None:
+        raise HTTPException(
+            status_code=404,
+            detail='Người dùng không phải thành viên của sự kiện'
+        )
+
+    # Không được xóa Owner dựa trên role
+    if member.role == 'Owner':
+        raise HTTPException(
+            status_code=400,
+            detail='Không được xóa OWNER của sự kiện'
+        )
+
+    db.delete(member)
+    db.commit()
+
+    return APIResponse(
+        statusCode=200,
+        data=None,
+        message='Xóa thành viên thành công',
+        timestamp=datetime.now(timezone.utc),
+        path=f'/api/events/{event_id}/members/{user_id}',
+        error=None
+    )
+
+
+@router.get(
+    '/{event_id}/members',
+    response_model=APIResponse
+)
+def get_event_members(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Kiểm tra event tồn tại
+    event = (
+        db.query(Event)
+        .filter(Event.id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail='Sự kiện không tồn tại'
+        )
+
+    # Kiểm tra người dùng có quyền xem danh sách member
+    is_owner = event.owner_id == current_user.id
+
+    is_member = (
+        db.query(EventStaff)
+        .filter(
+            EventStaff.event_id == event_id,
+            EventStaff.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not is_owner and is_member is None:
+        raise HTTPException(
+            status_code=403,
+            detail='Bạn không phải thành viên của sự kiện'
+        )
+
+    # Lấy danh sách member
+    members = (
+        db.query(EventStaff)
+        .filter(EventStaff.event_id == event_id)
+        .all()
+    )
+
+    data = []
+
+    for member in members:
+        user = (
+            db.query(User)
+            .filter(User.id == member.user_id)
+            .first()
+        )
+
+        data.append({
+            'event_id': member.event_id,
+            'user_id': member.user_id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'role': member.role,
+            'joined_at': member.joined_at
+        })
+
+    return APIResponse(
+        statusCode=200,
+        data=data,
+        message='Lấy danh sách thành viên thành công',
+        timestamp=datetime.now(timezone.utc),
+        path=f'/api/events/{event_id}/members',
+        error=None
+    )

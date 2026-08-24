@@ -6,7 +6,6 @@ class EventStaffBase(BaseModel):
 
 class EventStaffCreate(BaseModel):
     user_id: int
-    role: str = "Member"
 
 class EventStaffResponse(BaseModel):
     event_id: int
