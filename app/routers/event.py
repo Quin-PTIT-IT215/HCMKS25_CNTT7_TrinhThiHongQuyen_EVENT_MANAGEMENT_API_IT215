@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.event import EventCreate, EventResponse, EventUpdate
 from app.db.database import get_db
 from app.schemas.response import APIResponse
+from app.schemas.event_staff import EventStaffCreate
 from app.models.user import User
 from app.models.event import Event, EventStaff
 from app.models.event_task import EventTask
@@ -221,3 +222,72 @@ def delete_event(
         path= f'/api/events/{event_id}',
         error= None
     )
+
+
+@router.post(
+    '/{event_id}/members',
+    response_model=APIResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def add_event_member(
+    event_id: int,
+    member_data: EventStaffCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Sự kiện không tồn tại"
+        )
+
+    if event.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Chỉ owner mới được thêm thành viên"
+        )
+
+    user = db.query(User).filter(
+        User.id == member_data.user_id
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Người dùng không tồn tại"
+        )
+
+
+    existing_member = db.query(EventStaff).filter(
+        EventStaff.event_id == event_id,
+        EventStaff.user_id == member_data.user_id
+    ).first()
+
+    if existing_member is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Người dùng đã là thành viên của sự kiện"
+        )
+
+    new_member = EventStaff(
+        event_id=event_id,
+        user_id=member_data.user_id,
+        role="Member",
+        joined_at= datetime.now(timezone.utc)
+    )
+
+    db.add(new_member)
+    db.commit()
+    db.refresh(new_member)
+
+    return APIResponse(
+    statusCode= status.HTTP_201_CREATED,
+    data= new_member,
+    message= "Thêm thành viên thành công",
+    timestamp= datetime.now(timezone.utc),
+    path= f"/events/{event_id}/members",
+    error= None
+)
