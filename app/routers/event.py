@@ -15,7 +15,7 @@ router = APIRouter(
     tags= ['Events']
 )
 
-@router.post('/event', response_model= APIResponse, status_code= status.HTTP_201_CREATED)
+@router.post('', response_model= APIResponse, status_code= status.HTTP_201_CREATED)
 def create_evevt(
     event_data: EventCreate,
     curren_user: User = Depends(get_current_user),

@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserLogin
+from app.schemas.response import APIResponse
 from app.models.user import User
 from app.core.security import hash_password, verify_password
 from app.core.exceptions import bad_request
 from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
-def create_user(user_data: UserCreate, db: Session):  
+def create_user(user_data: UserCreate, db: Session, response_model= APIResponse):  
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise bad_request('Email đã tồn tại')
@@ -24,7 +25,21 @@ def create_user(user_data: UserCreate, db: Session):
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    return APIResponse(
+        statusCode=201,
+        data={
+            "id": new_user.id,
+            "email": new_user.email,
+            "full_name": new_user.full_name,
+            "role": new_user.role,
+            "is_active": new_user.is_active,
+            "created_at": new_user.created_at
+        },
+        message="Đăng ký thành công",
+        timestamp=datetime.now(timezone.utc),
+        path="/api/auth/register",
+        error=None
+    )
 
 
 def user_login(db: Session, user_data: UserLogin):
