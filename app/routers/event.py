@@ -186,20 +186,6 @@ def delete_event(
             detail='Chỉ OWNER mới được xóa sự kiện'
         )
 
-    # Xóa các EventTask của Event
-    db.query(EventTask).filter(
-        EventTask.event_id == event_id
-    ).delete(
-        synchronize_session=False
-    )
-
-    # Xóa các thành viên của Event
-    db.query(EventStaff).filter(
-        EventStaff.event_id == event_id
-    ).delete(
-        synchronize_session=False
-    )
-
     # Xóa Event
     db.delete(event)
 

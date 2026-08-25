@@ -14,7 +14,7 @@ class Event(Base):
     owner = relationship('User', back_populates= 'owned_events', foreign_keys=[owner_id])
 
 # event N-N user qua EventStaff
-    staff_members = relationship('EventStaff', back_populates='event')
+    staff_members = relationship('EventStaff', back_populates='event', cascade="all, delete-orphan")
 
 # event 1-N EventTask
     tasks = relationship('EventTask', back_populates= 'event')
