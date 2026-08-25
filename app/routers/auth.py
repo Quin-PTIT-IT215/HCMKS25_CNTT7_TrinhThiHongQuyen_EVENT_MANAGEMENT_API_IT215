@@ -23,7 +23,7 @@ class RefreshTokenRequets(BaseModel):
 def register(
     email: str = Form(..., description= 'Email của người dùng'),
     password : str = Form(..., description= 'Mật khẩu'),
-    full_name : str = Form(..., description= 'Tên người dùng'),
+    full_name : str = Form(..., description= 'Tên người dùng'),  
     db: Session = Depends(get_db)):
 
     user_data = UserCreate(email = email, full_name= full_name, password= password)
