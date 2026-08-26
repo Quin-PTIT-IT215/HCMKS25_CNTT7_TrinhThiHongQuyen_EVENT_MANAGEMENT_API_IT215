@@ -10,7 +10,11 @@ from app.schemas.response import APIResponse
 from datetime import datetime, timezone
 
 
-app = FastAPI()
+app = FastAPI(
+    title= 'Event Management API',
+    description= 'API quản lý sự kiện và công việc sự kiện',
+    version= '1.0.0'
+)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(event.router)
@@ -31,7 +35,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
     return JSONResponse( # coi lại cái này
         status_code= exc.status_code,
-        content= response.model_dump(mode= 'json')
+        content= response.model_dump(mode= 'json'),
+        headers=exc.headers
     )
 
 
@@ -53,7 +58,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-@app.get('/health')
+@app.get('/health', tags= ['System'], summary= 'Kiểm tra trạng thái API', description= 'Kiểm tra API có hoạt động hay không', response_model= APIResponse)
 def health_check():
     return APIResponse(
         statusCode= 200,

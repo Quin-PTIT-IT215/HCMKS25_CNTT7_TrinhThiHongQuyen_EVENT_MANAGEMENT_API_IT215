@@ -17,16 +17,8 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
-    # credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
-    # credentials_exception = HTTPException(
-    #     status_code=status.HTTP_401_UNAUTHORIZED,
-    #     detail="Token không hợp lệ hoặc đã hết hạn",
-    #     headers={"WWW-Authenticate": "Bearer"}
-    # )
-
-    # token = credentials.credentials
 
     try:
         payload = decode_access_token(token)
@@ -39,20 +31,14 @@ def get_current_user(
                 detail= 'Token không hợp lệ'
             )
 
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token đã hết hạn",
+            detail= str(e),
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-    # except jwt.InvalidTokenError:
-    #     raise credentials_exception
-
     user = db.query(User).filter(User.id == user_id).first()
-
-    # if user is None:
-    #     raise credentials_exception
 
     if user is None:
         raise HTTPException(

@@ -19,7 +19,7 @@ class RefreshTokenRequets(BaseModel):
     refresh_token: str 
 
 
-@router.post('/register', response_model= APIResponse)
+@router.post('/register', response_model= APIResponse, status_code= 201, summary= 'Đăng ký tài khoản', description= 'Tạo tài khoản người dùng mới')
 def register(
     email: str = Form(..., description= 'Email của người dùng'),
     password : str = Form(..., description= 'Mật khẩu'),
@@ -31,7 +31,7 @@ def register(
 
     return new_user
 
-@router.post('/login', response_model= TokenResponse)
+@router.post('/login', response_model= TokenResponse, status_code= 200, summary= 'Đăng nhập', description= 'Xác thực email và mật khẩu, trả về JWT')
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user_data = UserLogin(email= form_data.username, password= form_data.password)
     user = user_login(db, user_data)
@@ -65,7 +65,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token_type="bearer"
 )
 
-@router.post('/refresh')
+@router.post('/refresh', summary= 'Làm mới access token', description= 'Sử dụng refresh token để cung cấp access token mới')
 def refresh_access_token(data: RefreshTokenRequets):
     try:
         payload = decode_refresh_token(data.refresh_token)
