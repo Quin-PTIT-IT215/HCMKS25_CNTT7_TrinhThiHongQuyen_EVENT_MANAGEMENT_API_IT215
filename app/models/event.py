@@ -17,7 +17,7 @@ class Event(Base):
     staff_members = relationship('EventStaff', back_populates='event', cascade="all, delete-orphan")
 
 # event 1-N EventTask
-    tasks = relationship('EventTask', back_populates= 'event', cascade= "all, delete_orphan")
+    tasks = relationship('EventTask', back_populates= 'event', cascade= "all, delete-orphan")
 
 
 class EventStaff(Base):

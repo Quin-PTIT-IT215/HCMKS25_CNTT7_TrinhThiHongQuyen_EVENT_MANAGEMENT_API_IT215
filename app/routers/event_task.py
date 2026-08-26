@@ -59,6 +59,12 @@ def create_event_task(
             detail="Priority phải là Low, Medium hoặc High"
         )
 
+
+    if task_data.assignee_id is not None or task_data.assignee_id <= 0:
+        task_data.assignee_id = current_user.id
+
+
+
     # Nếu có assignee_id thì kiểm tra người được giao
     #    có phải thành viên của event hay không
     if task_data.assignee_id is not None:
@@ -72,6 +78,8 @@ def create_event_task(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Người được giao công việc không phải thành viên của sự kiện"
             )
+
+    
 
     new_task = EventTask(
         event_id=event_id,
@@ -258,9 +266,11 @@ def update_event_task(
 
     # Chỉ lấy những trường client thực sự gửi lên
     update_data = task_data.model_dump(
-        exclude_unset=True,
-        mode="json"
+        exclude_unset=True
     )
+
+    print("DEBUG task_data:", task_data)
+    print("DEBUG update_data:", update_data)
 
 
     if "assignee_id" in update_data:
