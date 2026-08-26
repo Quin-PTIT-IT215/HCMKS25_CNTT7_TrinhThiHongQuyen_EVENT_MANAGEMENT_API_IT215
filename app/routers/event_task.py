@@ -14,6 +14,7 @@ from app.schemas.event_task import (
     EventTaskPriority
 )
 from app.schemas.response import APIResponse
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(
     prefix="/events",
@@ -257,31 +258,10 @@ def update_event_task(
 
     # Chỉ lấy những trường client thực sự gửi lên
     update_data = task_data.model_dump(
-        exclude_unset=True
+        exclude_unset=True,
+        mode="json"
     )
 
-    if "status" in update_data:
-        if update_data["status"] not in [
-            "Todo",
-            "In_progress",
-            "Done"
-        ]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Status phải là Todo, In_progress hoặc Done"
-            )
-
-    if "priority" in update_data:
-
-        if update_data["priority"] not in [
-            "Low",
-            "Medium",
-            "High"
-        ]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Priority phải là Low, Medium hoặc High"
-            )
 
     if "assignee_id" in update_data:
 
@@ -354,9 +334,16 @@ def delete_event_task(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Chỉ Owner của sự kiện mới được xóa công việc"
         )
-
-    db.delete(task)
-    db.commit()
+    
+    try:
+        db.delete(task)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Không thể xóa sự kiện vì còn dữ liệu liên quan"
+    )
 
     return APIResponse(
         statusCode=200,
